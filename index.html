@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Gist JSON Updater</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0d1117;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 700px;
+            width: 100%;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        .github-icon {
+            width: 32px;
+            height: 32px;
+            fill: #c9d1d9;
+        }
+        h1 {
+            color: #c9d1d9;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .subtitle {
+            color: #8b949e;
+            margin-bottom: 25px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: #c9d1d9;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .auto-badge {
+            background: #238636;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px 14px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            font-size: 14px;
+            font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+            transition: border-color 0.2s;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #58a6ff;
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15);
+        }
+        input::placeholder {
+            color: #484f58;
+        }
+        textarea {
+            min-height: 350px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+        .date-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #7ee787;
+            font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 14px;
+        }
+        .date-display svg {
+            width: 16px;
+            height: 16px;
+            fill: #7ee787;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary {
+            background: #238636;
+            color: white;
+            border-color: #2ea043;
+        }
+        .btn-primary:hover {
+            background: #2ea043;
+        }
+        .btn-secondary {
+            background: #21262d;
+            color: #c9d1d9;
+        }
+        .btn-secondary:hover {
+            background: #30363d;
+        }
+        .btn-danger {
+            background: #21262d;
+            color: #f85149;
+            border-color: #f85149;
+        }
+        .btn-danger:hover {
+            background: #da3633;
+            color: white;
+        }
+        .message {
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 13px;
+            display: none;
+            border: 1px solid;
+        }
+        .message.success {
+            background: #0d2b1e;
+            color: #7ee787;
+            border-color: #238636;
+        }
+        .message.error {
+            background: #2b1215;
+            color: #f85149;
+            border-color: #da3633;
+        }
+        .message.info {
+            background: #0d1d2b;
+            color: #79c0ff;
+            border-color: #1f6feb;
+        }
+        .user-list {
+            margin-top: 20px;
+            border-top: 1px solid #30363d;
+            padding-top: 20px;
+        }
+        .user-list h3 {
+            color: #c9d1d9;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 12px;
+        }
+        .user-item .id {
+            color: #79c0ff;
+        }
+        .user-item .expiry {
+            color: #7ee787;
+        }
+        .user-item .remove {
+            color: #f85149;
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            background: transparent;
+            border: 1px solid #30363d;
+        }
+        .user-item .remove:hover {
+            background: #da3633;
+            color: white;
+            border-color: #da3633;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <svg class="github-icon" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+            </svg>
+            <h1>Gist JSON Updater</h1>
+        </div>
+        <p class="subtitle">Paste a device ID to add/update users. Expiry date is automatically set to <strong>tomorrow</strong> (DD/MM/YYYY).</p>
+        
+        <div class="input-group">
+            <label for="deviceId">Device ID</label>
+            <input type="text" id="deviceId" placeholder="Enter device ID (e.g., 3BA4A93F018DC799)" maxlength="50" autocomplete="off">
+        </div>
+
+        <div class="input-group">
+            <label>
+                Expiry Date
+                <span class="auto-badge">AUTO: Tomorrow</span>
+            </label>
+            <div class="date-display">
+                <svg viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M3.5 0a.5.5 0 01.5.5V1h8V.5a.5.5 0 011 0V1h1a2 2 0 012 2v11a2 2 0 01-2 2H2a2 2 0 01-2-2V3a2 2 0 012-2h1V.5a.5.5 0 01.5-.5zM2 2a1 1 0 00-1 1v1h14V3a1 1 0 00-1-1H2zm13 3H1v9a1 1 0 001 1h12a1 1 0 001-1V5z"/>
+                </svg>
+                <span id="tomorrowDate">Calculating...</span>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn btn-primary" onclick="addOrUpdateUser()">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 4a.5.5 0 01.5.5v3h3a.5.5 0 010 1h-3v3a.5.5 0 01-1 0v-3h-3a.5.5 0 010-1h3v-3A.5.5 0 018 4z"/>
+                </svg>
+                Add/Update User
+            </button>
+            <button class="btn btn-secondary" onclick="copyToClipboard()">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M4 1.5H3a2 2 0 00-2 2V14a2 2 0 002 2h10a2 2 0 002-2V3.5a2 2 0 00-2-2h-1v1h1a1 1 0 011 1V14a1 1 0 01-1 1H3a1 1 0 01-1-1V3.5a1 1 0 011-1h1v-1z"/>
+                    <path d="M9.5 1a.5.5 0 01.5.5v1a.5.5 0 01-.5.5h-3a.5.5 0 01-.5-.5v-1a.5.5 0 01.5-.5h3zm-3-1A1.5 1.5 0 005 1.5v1A1.5 1.5 0 006.5 4h3A1.5 1.5 0 0011 2.5v-1A1.5 1.5 0 009.5 0h-3z"/>
+                </svg>
+                Copy JSON
+            </button>
+            <button class="btn btn-danger" onclick="resetAll()">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 3a5 5 0 104.546 2.914.5.5 0 01.908-.417A6 6 0 118 2v1z"/>
+                    <path d="M8 4.466V.534a.25.25 0 01.41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 018 4.466z"/>
+                </svg>
+                Reset
+            </button>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <div class="input-group" style="margin-top: 20px;">
+            <label for="jsonOutput">
+                Generated JSON
+                <span style="color: #8b949e; font-size: 12px;" id="userCount">2 Users</span>
+            </label>
+            <textarea id="jsonOutput" readonly placeholder="JSON will appear here..." spellcheck="false"></textarea>
+        </div>
+
+        <div class="user-list" id="userListSection" style="display: none;">
+            <h3>Current Users</h3>
+            <div id="userList"></div>
+        </div>
+    </div>
+
+    <script>
+        // Default JSON from your Gist
+        const defaultJSON = {
+            "AdminUrl": "https://t.me/dp_mods",
+            "Marquee": "Message the admin to buy a VIP key. Only paid users allowed.",
+            "Users": [
+                {
+                    "ID": "3BA4A93F018DC799",
+                    "Expiry": "27/12/2026"
+                }
+            ]
+        };
+
+        let currentData = JSON.parse(JSON.stringify(defaultJSON));
+
+        // Get tomorrow's date in DD/MM/YYYY format
+        function getTomorrowDate() {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            const day = String(tomorrow.getDate()).padStart(2, '0');
+            const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+            const year = tomorrow.getFullYear();
+            
+            return `${day}/${month}/${year}`;
+        }
+
+        // Initialize
+        function init() {
+            const tomorrowDate = getTomorrowDate();
+            document.getElementById('tomorrowDate').textContent = tomorrowDate;
+            displayJSON();
+            updateUserList();
+        }
+
+        // Display JSON
+        function displayJSON() {
+            const jsonString = JSON.stringify(currentData, null, 2);
+            document.getElementById('jsonOutput').value = jsonString;
+            document.getElementById('userCount').textContent = `${currentData.Users.length} User${currentData.Users.length !== 1 ? 's' : ''}`;
+        }
+
+        // Show message
+        function showMessage(text, type = 'success') {
+            const msgDiv = document.getElementById('message');
+            msgDiv.textContent = text;
+            msgDiv.className = `message ${type}`;
+            msgDiv.style.display = 'block';
+            
+            clearTimeout(msgDiv.hideTimeout);
+            msgDiv.hideTimeout = setTimeout(() => {
+                msgDiv.style.display = 'none';
+            }, 4000);
+        }
+
+        // Add or update user
+        function addOrUpdateUser() {
+            const deviceId = document.getElementById('deviceId').value.trim();
+            const expiryDate = getTomorrowDate();
+            
+            if (!deviceId) {
+                showMessage('❌ Please enter a Device ID', 'error');
+                document.getElementById('deviceId').focus();
+                return;
+            }
+
+            if (deviceId === 'FRIEND_DEVICE_ID_HERE') {
+                showMessage('⚠️ Please replace the placeholder with a real device ID', 'error');
+                return;
+            }
+            
+            // Check if device ID already exists
+            const existingIndex = currentData.Users.findIndex(user => user.ID === deviceId);
+            
+            if (existingIndex !== -1) {
+                // Update existing user
+                const oldExpiry = currentData.Users[existingIndex].Expiry;
+                currentData.Users[existingIndex].Expiry = expiryDate;
+                showMessage(`🔄 Updated: ${deviceId.substring(0, 12)}... | Expiry: ${oldExpiry} → ${expiryDate}`, 'info');
+            } else {
+                // Add new user
+                currentData.Users.push({
+                    "ID": deviceId,
+                    "Expiry": expiryDate
+                });
+                showMessage(`✅ Added: ${deviceId.substring(0, 12)}... | Expiry: ${expiryDate}`, 'success');
+            }
+            
+            displayJSON();
+            updateUserList();
+            
+            // Clear input
+            document.getElementById('deviceId').value = '';
+            document.getElementById('deviceId').focus();
+        }
+
+        // Remove user
+        function removeUser(index) {
+            const user = currentData.Users[index];
+            if (confirm(`Remove user:\n${user.ID}\nExpiry: ${user.Expiry}?`)) {
+                currentData.Users.splice(index, 1);
+                displayJSON();
+                updateUserList();
+                showMessage(`🗑️ Removed: ${user.ID.substring(0, 12)}...`, 'info');
+            }
+        }
+
+        // Update user list display
+        function updateUserList() {
+            const userListDiv = document.getElementById('userList');
+            const userListSection = document.getElementById('userListSection');
+            
+            if (currentData.Users.length === 0) {
+                userListSection.style.display = 'none';
+                return;
+            }
+            
+            userListSection.style.display = 'block';
+            
+            userListDiv.innerHTML = currentData.Users.map((user, index) => `
+                <div class="user-item">
+                    <span class="id">🆔 ${user.ID}</span>
+                    <span class="expiry">📅 ${user.Expiry}</span>
+                    <button class="remove" onclick="removeUser(${index})" title="Remove user">✕</button>
+                </div>
+            `).join('');
+        }
+
+        // Copy to clipboard
+        async function copyToClipboard() {
+            const jsonOutput = document.getElementById('jsonOutput');
+            
+            if (!jsonOutput.value) {
+                showMessage('❌ No JSON to copy', 'error');
+                return;
+            }
+            
+            try {
+                await navigator.clipboard.writeText(jsonOutput.value);
+                showMessage('📋 Copied! Paste directly into your GitHub Gist', 'success');
+            } catch (err) {
+                jsonOutput.select();
+                jsonOutput.setSelectionRange(0, 99999);
+                document.execCommand('copy');
+                showMessage('📋 Copied! Paste directly into your GitHub Gist', 'success');
+            }
+        }
+
+        // Reset all
+        function resetAll() {
+            if (confirm('Reset all changes and restore default JSON?')) {
+                currentData = JSON.parse(JSON.stringify(defaultJSON));
+                displayJSON();
+                updateUserList();
+                document.getElementById('deviceId').value = '';
+                showMessage('🔄 Reset to default JSON', 'info');
+            }
+        }
+
+        // Enter key to submit
+        document.getElementById('deviceId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addOrUpdateUser();
+            }
+        });
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
